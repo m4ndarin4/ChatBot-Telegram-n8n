@@ -1,0 +1,326 @@
+{
+  "name": "TA4 - Chatbot Telegram",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        -512,
+        -112
+      ],
+      "id": "ae285753-11e9-456a-9fef-7847bba83c41",
+      "name": "Telegram Trigger",
+      "webhookId": "9cabbc5b-6026-4508-b1ba-a6375133ad1c",
+      "credentials": {
+        "telegramApi": {
+          "id": "HCCjAz2ahhsCfU4N",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        320,
+        32
+      ],
+      "id": "2cbf045a-37c2-40db-bc09-76403b372bec",
+      "name": "Respuesta IA",
+      "webhookId": "213c0cd4-0110-4955-ba76-c11cf336bac3",
+      "credentials": {
+        "telegramApi": {
+          "id": "HCCjAz2ahhsCfU4N",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Consulta del usuario: {{ $json.message.text }}\nCategoría detectada: {{ $json.categoria }}",
+        "options": {
+          "systemMessage": "Eres el asistente virtual de Logística & Distribución Andina S.A.C., una empresa peruana ficticia dedicada al transporte de carga y compras corporativas.\n\nTu función es responder consultas sobre horarios, ubicación, servicios, cotizaciones, pedidos, proveedores, RUC y facturación.\n\nREGLAS:\n1. Consulta la base de conocimientos de Google Sheets para responder preguntas sobre la empresa.\n2. Usa únicamente la información disponible. No inventes precios, servicios, direcciones ni datos de pedidos.\n3. Responde siempre en español, de manera amable y profesional.\n4. Si el usuario saluda, dale la bienvenida y menciona brevemente los temas disponibles.\n5. Si la pregunta del usuario no se encuentra en la base de conocimientos y no existe información suficiente para responder, utiliza la siguiente respuesta:\n\"Lo siento, no cuento con información sobre esa consulta. Puedo ayudarte con horarios, ubicación, servicios, cotizaciones, proveedores y facturación.\" \nNunca inventes información que no esté registrada en Google Sheets.\n6. Si preguntan por pedidos o pagos, explica cómo solicitar una revisión. No inventes estados.\n7. Si preguntan algo ajeno a la empresa, indica que solo puedes atender consultas del negocio.\n8. Considera la categoría detectada mediante palabras clave para interpretar la intención del usuario. Utiliza esta categoría únicamente como orientación y verifica siempre la información con Google Sheets antes de responder.\n9. Mantén las respuestas claras y breves.\n10. Cuando el usuario solicite ayuda para redactar un correo sobre pedidos, proveedores o facturación, utiliza el contexto de la conversación anterior. Solicita únicamente los datos faltantes y prepara un borrador profesional con asunto, saludo, descripción del problema y despedida. No inventes datos ni direcciones de correo. No afirmes haber enviado el mensaje. Para demostraciones, utiliza información ficticia.\n11. Responde las consultas de manera natural y amable. Cuando corresponda, termina la respuesta preguntando \"¿Puedo ayudarte con alguna otra consulta?\". Evita repetir esta pregunta innecesariamente."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        64,
+        -144
+      ],
+      "id": "586318ae-dd19-4389-bb0f-129def01f2b6",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -368,
+        160
+      ],
+      "id": "d5c107e6-a7eb-48bf-963b-b3b167c6f80b",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1s6MxxoNSwZHB9zRotDQlb05Dlq0qF_7OLVLeIXXCxBM/edit",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "FAQ_18",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        128,
+        160
+      ],
+      "id": "3631f4a3-042c-41bd-832d-d887b4a54b8f",
+      "name": "Get row(s) in sheet in Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pViZnSffGkUY5Mo3",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ef209092-13ee-4024-a867-31d30b247247",
+              "name": "categoria",
+              "value": "= {{   /hola|buenas|\\/start/i.test($json.message.text || '') ? 'bienvenida' :   /horario|atienden|abren/i.test($json.message.text || '') ? 'horario' :   /ubicaci[oó]n|direcci[oó]n|d[oó]nde|sede/i.test($json.message.text || '') ? 'ubicacion' :   /precio|tarifa|cotizaci[oó]n|cu[aá]nto cuesta/i.test($json.message.text || '') ? 'cotizacion' :   /proveedor|ruc|sunat/i.test($json.message.text || '') ? 'proveedores' :   /pedido|env[ií]o|entrega|retraso/i.test($json.message.text || '') ? 'pedidos' :   /factura|pago|comprobante/i.test($json.message.text || '') ? 'facturacion' :   /gracias|adi[oó]s/i.test($json.message.text || '') ? 'despedida' :   'consulta_general' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -304,
+        -256
+      ],
+      "id": "ac7cac85-56af-404f-b6fb-35de4b305b66",
+      "name": "Clasificar consulta"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        -64,
+        144
+      ],
+      "id": "8edbbe4b-2d84-4460-9780-c5adcb96ed48",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "ad2a0e59-d884-4090-8837-a0c66d7ce68a",
+              "leftValue": "={{ /^(finalizar|es todo|ad[ií]os|hasta luego|gracias(?:[,.! ]+es todo)?)[.! ]*$/i.test(($('Telegram Trigger').first().json.message.text || '').trim()) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        -128,
+        -224
+      ],
+      "id": "e9f58598-8697-48b3-9e62-3678f62fd248",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
+        "text": "¡Muchas gracias por comunicarte con Logística & Distribución Andina S.A.C.! 😊  Ha sido un gusto atenderte. Si necesitas más información en otro momento, estaremos encantados de ayudarte.  ¡Que tengas un excelente día! 🚚",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        144,
+        -320
+      ],
+      "id": "db46bf5f-dc54-4d9d-a499-9e559af96de1",
+      "name": "Cierre",
+      "webhookId": "89c55b1e-0f79-42de-a929-6839b637b699",
+      "credentials": {
+        "telegramApi": {
+          "id": "HCCjAz2ahhsCfU4N",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Clasificar consulta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respuesta IA": {
+      "main": [
+        []
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respuesta IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clasificar consulta": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Cierre",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "6e4c5be0-c37d-446f-b191-24d234c8ff93",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2af0aa7bd187518677db83f87c0a88be1b6d3253e4d954c37b1706dc83c06e7d"
+  },
+  "nodeGroups": [],
+  "id": "YOagFPivNbKh1f32",
+  "tags": []
+}
