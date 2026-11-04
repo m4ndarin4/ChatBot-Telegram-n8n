@@ -62,11 +62,11 @@ La respuesta se envía automáticamente al usuario mediante Telegram.
 
 ### Flujo de automatización en n8n
 
-![Flujo de automatización](screenshots/flujo-n8n.png)
+![Flujo de automatización](screenshots/Flujon8n.png)
 
 ### Pruebas de funcionamiento en Telegram
 
-![Pruebas del chatbot](screenshots/prueba-telegram.png)
+![Pruebas del chatbot](screenshots/TestChatbot.png)
 
 ## ✅ Resultados obtenidos
 
